@@ -28,20 +28,23 @@ int FindPath(const int nStartX, const int nStartY,
     std::vector<int> cameFrom;
     cameFrom.resize(mapSize);
 
-    // Interleaving some data for better cache-usage
-    std::vector<int> data;
-    data.resize(mapSize*2);
-    int offsetCost = 0;
-    int offsetHeuristic = 1;
+    struct Node
+    {
+      int gcost;
+      int hcost;
+    };
+    
+    std::vector<Node> nodes;
+    nodes.resize(mapSize);
 
     for(int i = 0; i < mapSize; i++)
     {
-        data[offsetCost + i*2] = -1;
+        nodes[i].gcost = -1;
         closed[i] = false;
     }
 
     int currentIndex = startIndex;
-    data[offsetCost + currentIndex*2] = 0;
+    nodes[startIndex].gcost = 0;
     open.push_back(currentIndex);
 
     while( currentIndex != targetIndex )
@@ -52,8 +55,7 @@ int FindPath(const int nStartX, const int nStartY,
         auto lowestCost = (open.begin())++;
         for( auto it = lowestCost; it != open.end(); ++it)
         {
-            if( data[offsetCost + *lowestCost*2] + data[offsetHeuristic + *lowestCost*2]
-                > data[offsetCost + *it*2] + data[offsetHeuristic + *it*2] )
+            if( nodes[*lowestCost].gcost + nodes[*lowestCost].hcost < nodes[*it].gcost + nodes[*it].hcost )
             {
                 lowestCost = it;
             }
@@ -78,16 +80,16 @@ int FindPath(const int nStartX, const int nStartY,
         {
             if (pMap[n] == 1 && !closed[n] )
             {
-                int newCost = data[offsetCost + currentIndex*2] + 1;
-                if( data[offsetCost + n*2] == -1 )
+	        int newCost = nodes[currentIndex].gcost + 1;
+                if( nodes[n].gcost == -1 )
                 {
-                    data[offsetCost + n*2] = newCost;
-                    data[offsetHeuristic + n*2] = heuristic(n, targetIndex, nMapWidth);
+                    nodes[n].gcost = newCost;
+                    nodes[n].hcost = heuristic(n, targetIndex, nMapWidth);
                     cameFrom[n] = currentIndex;
                     open.push_back(n);
-                }else if ( data[offsetCost + n*2] > newCost )
+                }else if ( nodes[n].gcost > newCost )
                 {
-                    data[offsetCost + n*2] = newCost;
+                    nodes[n].gcost = newCost;
                     cameFrom[n] = currentIndex;
                 }
             }
